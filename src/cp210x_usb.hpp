@@ -7,7 +7,7 @@
 #pragma once
 #include <Arduino.h>
 
-#include "include/usb/cdc_acm_host.h"
+#include "usb/cdc_acm_host.h"
 
 #define CP210X_PID       (0xEA60) // Single i.e. CP2101 - CP2104
 #define CP2105_PID       (0xEA70) // Dual

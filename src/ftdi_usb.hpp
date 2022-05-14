@@ -7,7 +7,7 @@
 #pragma once
 #include <Arduino.h>
 
-#include "include/usb/cdc_acm_host.h"
+#include "usb/cdc_acm_host.h"
 
 #define FTDI_FT232_PID       (0x6001)
 #define FTDI_FT231_PID       (0x6015)

@@ -18,5 +18,6 @@
   ],
   "version": "1.0.0",
   "frameworks": "arduino",
-  "platforms": "*"
+  "platforms": "*",
+  "headers": ["cp210x_usb.hpp", "ftdi_usb.hpp", "include/usb/cdc_acm_host.h", "include/usb/usb_types_cdc.h"]
 }
