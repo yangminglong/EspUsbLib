@@ -107,15 +107,15 @@ void setup() {
       vcp = FT23x::open_ftdi(FTDI_FT232_PID, &dev_config);
   // }
 #else
-  // try {
+  try {
       ESP_LOGI(TAG, "Opening CP210X device");
       vcp = CP210x::open_cp210x(CP210X_PID, &dev_config);
-  // }
+  }
 #endif
-  // catch (esp_err_t err) {
-  //     ESP_LOGE(TAG, "The required device was not opened.\nExiting...");
-  //     return;
-  // }
+  catch (esp_err_t err) {
+      ESP_LOGE(TAG, "The required device was not opened.\nExiting...");
+      ESP.restart();
+  }
 
   ESP_LOGI(TAG, "Setting up line coding");
   cdc_acm_line_coding_t line_coding = {
