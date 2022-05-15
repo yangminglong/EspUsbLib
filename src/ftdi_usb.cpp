@@ -41,13 +41,13 @@ FT23x::FT23x(uint16_t pid, const cdc_acm_host_device_config_t *dev_config, uint8
     esp_err_t err;
     err = this->open_vendor_specific(FTDI_VID, pid, this->intf, &ftdi_config);
     if (err != ESP_OK) {
-        //throw(err);
+        throw(err);
     }
 
     // FT23x interface must be first reset and configured (115200 8N1)
     err = this->send_custom_request(FTDI_WRITE_REQ, FTDI_CMD_RESET, 0, this->intf + 1, 0, NULL);
     if (err != ESP_OK) {
-        //throw(err);
+        throw(err);
     }
 
     cdc_acm_line_coding_t line_coding = {
@@ -58,7 +58,7 @@ FT23x::FT23x(uint16_t pid, const cdc_acm_host_device_config_t *dev_config, uint8
     };
     err = this->line_coding_set(&line_coding);
     if (err != ESP_OK) {
-        //throw(err);
+        throw(err);
     }
 };
 

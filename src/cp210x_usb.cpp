@@ -30,13 +30,13 @@ CP210x::CP210x(uint16_t pid, const cdc_acm_host_device_config_t *dev_config, uin
     esp_err_t err;
     err = this->open_vendor_specific(SILICON_LABS_VID, pid, this->intf, dev_config);
     if (err != ESP_OK) {
-        //throw(err);
+        throw(err);
     }
 
     // CP210X interfaces must be explicitly enabled
     err = this->send_custom_request(CP210X_WRITE_REQ, CP210X_CMD_IFC_ENABLE, 1, this->intf, 0, NULL);
     if (err != ESP_OK) {
-        //throw(err);
+        throw(err);
     }
 };
 

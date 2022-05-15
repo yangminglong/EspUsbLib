@@ -21,7 +21,7 @@
 using namespace esp_usb;
 
 // Change these values to match your needs
-#define EXAMPLE_BAUDRATE     (115200)
+#define EXAMPLE_BAUDRATE     (256000)
 #define EXAMPLE_STOP_BITS    (0)      // 0: 1 stopbit, 1: 1.5 stopbits, 2: 2 stopbits
 #define EXAMPLE_PARITY       (0)      // 0: None, 1: Odd, 2: Even, 3: Mark, 4: Space
 #define EXAMPLE_DATA_BITS    (8)
@@ -66,7 +66,17 @@ void usb_lib_task(void *arg)
     }
 }
 
+CP210x *vcp;
 void setup() {
+  Serial.begin(115200);
+
+  while(!Serial);
+
+  delay(100);
+
+  Serial.println("program has start.");
+
+  esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
   //Install USB Host driver. Should only be called once in entire application
   ESP_LOGI(TAG, "Installing USB Host");
@@ -82,45 +92,47 @@ void setup() {
   ESP_LOGI(TAG, "Installing CDC-ACM driver");
   ESP_ERROR_CHECK(cdc_acm_host_install(NULL));
 
-  while (true) {
-      const cdc_acm_host_device_config_t dev_config = {
-          .connection_timeout_ms = 10000,
-          .out_buffer_size = 64,
-          .event_cb = handle_event,
-          .data_cb = handle_rx,
-          .user_arg = NULL,
-      };
+  const cdc_acm_host_device_config_t dev_config = {
+      .connection_timeout_ms = 10000,
+      .out_buffer_size = 64,
+      .event_cb = handle_event,
+      .data_cb = handle_rx,
+      .user_arg = NULL,
+  };
 
-  #if defined(CONFIG_EXAMPLE_USE_FTDI)
-      FT23x *vcp;
-      try {
-          ESP_LOGI(TAG, "Opening FT232 UART device");
-          vcp = FT23x::open_ftdi(FTDI_FT232_PID, &dev_config);
-      }
-  #else
-      CP210x *vcp;
-      try {
-          ESP_LOGI(TAG, "Opening CP210X device");
-          vcp = CP210x::open_cp210x(CP210X_PID, &dev_config);
-      }
-  #endif
-      catch (esp_err_t err) {
-          ESP_LOGE(TAG, "The required device was not opened.\nExiting...");
-          return;
-      }
+#if defined(CONFIG_EXAMPLE_USE_FTDI)
+  FT23x *vcp;
+  // try {
+      ESP_LOGI(TAG, "Opening FT232 UART device");
+      vcp = FT23x::open_ftdi(FTDI_FT232_PID, &dev_config);
+  // }
+#else
+  // try {
+      ESP_LOGI(TAG, "Opening CP210X device");
+      vcp = CP210x::open_cp210x(CP210X_PID, &dev_config);
+  // }
+#endif
+  // catch (esp_err_t err) {
+  //     ESP_LOGE(TAG, "The required device was not opened.\nExiting...");
+  //     return;
+  // }
 
-      ESP_LOGI(TAG, "Setting up line coding");
-      cdc_acm_line_coding_t line_coding = {
-          .dwDTERate = EXAMPLE_BAUDRATE,
-          .bCharFormat = EXAMPLE_STOP_BITS,
-          .bParityType = EXAMPLE_PARITY,
-          .bDataBits = EXAMPLE_DATA_BITS,
-      };
-      ESP_ERROR_CHECK(vcp->line_coding_set(&line_coding));
+  ESP_LOGI(TAG, "Setting up line coding");
+  cdc_acm_line_coding_t line_coding = {
+      .dwDTERate = EXAMPLE_BAUDRATE,
+      .bCharFormat = EXAMPLE_STOP_BITS,
+      .bParityType = EXAMPLE_PARITY,
+      .bDataBits = EXAMPLE_DATA_BITS,
+  };
+  ESP_ERROR_CHECK(vcp->line_coding_set(&line_coding));
 }
 
-void loop() 
+void loop()
 {
+  while (Serial.available()) {
+    String str = Serial.readString();
+    ESP_ERROR_CHECK(vcp->tx_blocking((uint8_t *)str.c_str(), str.length()));
+  }
   /*
   ESP_ERROR_CHECK(vcp->set_control_line_state(false, true));
   ESP_ERROR_CHECK(vcp->tx_blocking((uint8_t *)"Test string", 12));
