@@ -76,7 +76,7 @@ void setup() {
 
   Serial.println("program has start.");
 
-  esp_log_level_set(TAG, ESP_LOG_DEBUG);
+  //esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
   //Install USB Host driver. Should only be called once in entire application
   ESP_LOGI(TAG, "Installing USB Host");
