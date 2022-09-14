@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include "cp210x_usb.hpp"
 #include "ftdi_usb.hpp"
+#include "ch34x_usb.hpp"
 #include "usb/usb_host.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
