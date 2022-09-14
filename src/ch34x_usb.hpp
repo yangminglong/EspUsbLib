@@ -26,7 +26,7 @@ public:
      * @param[in] interface_idx  Interface number
      * @return CH34x             Pointer to created and opened CH34x device
      */
-    static CH34x *open_ch34x(uint16_t pid, uint16_t vid, const cdc_acm_host_device_config_t *dev_config, uint8_t interface_idx = 0);
+    static CH34x *open_ch34x(uint16_t pid, const cdc_acm_host_device_config_t *dev_config, uint8_t interface_idx = 0);
 
     /**
      * @brief Set Line Coding method
@@ -53,7 +53,7 @@ private:
 
     // Constructors are private, use factory method to create this object
     CH34x();
-    CH34x(uint16_t pid, uint16_t vid, const cdc_acm_host_device_config_t *dev_config, uint8_t interface_idx = 0);
+    CH34x(uint16_t pid, const cdc_acm_host_device_config_t *dev_config, uint8_t interface_idx = 0);
 
     // Make open functions from CdcAcmDevice class private
     using CdcAcmDevice::open;

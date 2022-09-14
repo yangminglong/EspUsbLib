@@ -28,6 +28,14 @@ using namespace esp_usb;
 
 static const char *TAG = "VCP example";
 
+static bool new_dev_cb_called = false;
+static uint16_t pid = 0;
+static uint16_t vid = 0;
+static uint8_t interface_idx = 0;
+
+CdcAcmDevice *vcp;
+
+
 static void handle_rx(uint8_t *data, size_t data_len, void *arg)
 {
     printf("%.*s", data_len, data);
@@ -41,6 +49,9 @@ static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_
             break;
         case CDC_ACM_HOST_DEVICE_DISCONNECTED:
             ESP_LOGI(TAG, "Device suddenly disconnected");
+            delete vcp;
+            vcp = nullptr;
+
             break;
         case CDC_ACM_HOST_SERIAL_STATE:
             ESP_LOGI(TAG, "serial state notif 0x%04X", event->data.serial_state.val);
@@ -66,7 +77,65 @@ void usb_lib_task(void *arg)
     }
 }
 
-CP210x *vcp;
+static void new_dev_cb(usb_device_handle_t usb_dev)
+{
+    const usb_device_desc_t *device_desc;
+    ESP_ERROR_CHECK( usb_host_get_device_descriptor(usb_dev, &device_desc));
+    vid =  device_desc->idVendor;
+    pid =  device_desc->idProduct;
+
+    const usb_config_desc_t *config_desc;
+    ESP_ERROR_CHECK( usb_host_get_active_config_descriptor(usb_dev, &config_desc));
+    interface_idx = config_desc->bNumInterfaces;
+
+    new_dev_cb_called = true;
+}
+
+
+void openVCPDevice()
+{
+  const cdc_acm_host_device_config_t dev_config = {
+      .connection_timeout_ms = 10000,
+      .out_buffer_size = 64,
+      .event_cb = handle_event,
+      .data_cb = handle_rx,
+      .user_arg = NULL,
+  };
+  
+  switch (vid)
+  {
+  case FTDI_VID:
+      vcp = FT23x::open_ftdi(pid, &dev_config);
+      break;
+  case SILICON_LABS_VID:
+      vcp = CP210x::open_cp210x(pid, &dev_config);
+      break;
+  case NANJING_QINHENG_MICROE_VID:
+      vcp = CH34x::open_ch34x(pid, &dev_config);
+      break;
+  default:
+      break;
+  }
+
+
+
+  showTextOnScreen(2, "Setting up line coding", TFT_BLACK, TFT_LIGHTGREY);
+  cdc_acm_line_coding_t line_coding = {
+      .dwDTERate = 115200,
+      .bCharFormat = 0,
+      .bParityType = 0,
+      .bDataBits = 8,
+  };
+  ESP_ERROR_CHECK(vcp->line_coding_set(&line_coding));
+
+  /*
+  ESP_ERROR_CHECK(vcp->set_control_line_state(false, true));
+  ESP_ERROR_CHECK(vcp->tx_blocking((uint8_t *)"Test string", 12));
+  */
+
+
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -76,7 +145,7 @@ void setup() {
 
   Serial.println("program has start.");
 
-  //esp_log_level_set(TAG, ESP_LOG_DEBUG);
+  esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
   //Install USB Host driver. Should only be called once in entire application
   ESP_LOGI(TAG, "Installing USB Host");
@@ -89,52 +158,27 @@ void setup() {
   // Create a task that will handle USB library events
   xTaskCreate(usb_lib_task, "usb_lib", 4096, NULL, 10, NULL);
 
+  const cdc_acm_host_driver_config_t driver_config = {
+      .driver_task_stack_size = 4960,
+      .driver_task_priority = 10,
+      .xCoreID = 0,
+      .new_dev_cb = new_dev_cb,
+  };
+
   ESP_LOGI(TAG, "Installing CDC-ACM driver");
-  ESP_ERROR_CHECK(cdc_acm_host_install(NULL));
+  ESP_ERROR_CHECK(cdc_acm_host_install(&driver_config));
 
-  const cdc_acm_host_device_config_t dev_config = {
-      .connection_timeout_ms = 10000,
-      .out_buffer_size = 64,
-      .event_cb = handle_event,
-      .data_cb = handle_rx,
-      .user_arg = NULL,
-  };
-
-#if defined(CONFIG_EXAMPLE_USE_FTDI)
-  FT23x *vcp;
-  // try {
-      ESP_LOGI(TAG, "Opening FT232 UART device");
-      vcp = FT23x::open_ftdi(FTDI_FT232_PID, &dev_config);
-  // }
-#else
-  try {
-      ESP_LOGI(TAG, "Opening CP210X device");
-      vcp = CP210x::open_cp210x(CP210X_PID, &dev_config);
-  }
-#endif
-  catch (esp_err_t err) {
-      ESP_LOGE(TAG, "The required device was not opened.\nExiting...");
-      ESP.restart();
-  }
-
-  ESP_LOGI(TAG, "Setting up line coding");
-  cdc_acm_line_coding_t line_coding = {
-      .dwDTERate = EXAMPLE_BAUDRATE,
-      .bCharFormat = EXAMPLE_STOP_BITS,
-      .bParityType = EXAMPLE_PARITY,
-      .bDataBits = EXAMPLE_DATA_BITS,
-  };
-  ESP_ERROR_CHECK(vcp->line_coding_set(&line_coding));
 }
 
 void loop()
 {
+    if (new_dev_cb_called) {
+        new_dev_cb_called = false;
+        openVCPDevice();
+    }
+
   while (Serial.available()) {
     String str = Serial.readString();
     ESP_ERROR_CHECK(vcp->tx_blocking((uint8_t *)str.c_str(), str.length()));
   }
-  /*
-  ESP_ERROR_CHECK(vcp->set_control_line_state(false, true));
-  ESP_ERROR_CHECK(vcp->tx_blocking((uint8_t *)"Test string", 12));
-  */
 }
