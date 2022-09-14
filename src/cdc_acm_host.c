@@ -54,6 +54,7 @@ typedef struct {
     SemaphoreHandle_t open_close_mutex;
     EventGroupHandle_t event_group;
     cdc_acm_new_dev_callback_t new_dev_cb;
+    cdc_acm_dev_gone_callback_t dev_gone_cb;
     SLIST_HEAD(list_dev, cdc_dev_s) cdc_devices_list;   /*!< List of open pseudo devices */
 } cdc_acm_obj_t;
 
@@ -69,6 +70,7 @@ static const cdc_acm_host_driver_config_t cdc_acm_driver_config_default = {
     .driver_task_priority = 10,
     .xCoreID = 0,
     .new_dev_cb = NULL,
+    .dev_gone_cb = NULL,
 };
 
 /**
@@ -432,6 +434,7 @@ esp_err_t cdc_acm_host_install(const cdc_acm_host_driver_config_t *driver_config
     cdc_acm_obj->open_close_mutex = mutex;
     cdc_acm_obj->cdc_acm_client_hdl = usb_client;
     cdc_acm_obj->new_dev_cb = driver_config->new_dev_cb;
+    cdc_acm_obj->dev_gone_cb = driver_config->dev_gone_cb;
 
     // Between 1st call of this function and following section, another task might try to install this driver:
     // Make sure that there is only one instance of this driver in the system
@@ -1033,6 +1036,9 @@ static void usb_event_cb(const usb_host_client_event_msg_t *event_msg, void *arg
         break;
     case USB_HOST_CLIENT_EVENT_DEV_GONE: {
         ESP_LOGD(TAG, "Device suddenly disconnected");
+        if (p_cdc_acm_obj->dev_gone_cb) {
+            p_cdc_acm_obj->new_dev_cb(event_msg->dev_gone.dev_hdl);
+        }
         // Find CDC pseudo-devices associated with this USB device and close them
         cdc_dev_t *cdc_dev;
         cdc_dev_t *tcdc_dev;

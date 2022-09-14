@@ -82,6 +82,11 @@ typedef struct {
 typedef void (*cdc_acm_new_dev_callback_t)(usb_device_handle_t usb_dev);
 
 /**
+ * 设备拔出，回调函数
+ * */
+typedef void (*cdc_acm_dev_gone_callback_t)(usb_device_handle_t usb_dev);
+
+/**
  * @brief Data receive callback type
  */
 typedef void (*cdc_acm_data_callback_t)(uint8_t* data, size_t data_len, void *user_arg);
@@ -101,6 +106,7 @@ typedef struct {
     unsigned driver_task_priority;         /**< Priority of the driver's task */
     int  xCoreID;                          /**< Core affinity of the driver's task */
     cdc_acm_new_dev_callback_t new_dev_cb; /**< New USB device connected callback. Can be NULL. */
+    cdc_acm_dev_gone_callback_t dev_gone_cb; /**< dev gone callback. Can be NULL. */
 } cdc_acm_host_driver_config_t;
 
 /**
