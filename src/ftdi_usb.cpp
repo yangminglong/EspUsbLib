@@ -9,7 +9,6 @@
 #include "esp_log.h"
 #include "esp_check.h"
 
-#define FTDI_VID       (0x0403)
 #define FTDI_READ_REQ  (USB_BM_REQUEST_TYPE_TYPE_VENDOR | USB_BM_REQUEST_TYPE_DIR_IN)
 #define FTDI_WRITE_REQ (USB_BM_REQUEST_TYPE_TYPE_VENDOR | USB_BM_REQUEST_TYPE_DIR_OUT)
 

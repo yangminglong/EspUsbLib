@@ -271,6 +271,9 @@ esp_err_t cdc_acm_host_send_custom_request(cdc_acm_dev_hdl_t cdc_hdl, uint8_t bm
 
 #ifdef __cplusplus
 }
+
+
+
 class CdcAcmDevice
 {
 public:
@@ -284,7 +287,7 @@ public:
         }
     }
 
-    inline esp_err_t tx_blocking(uint8_t *data, size_t len, uint32_t timeout_ms = 100)
+    inline esp_err_t tx_blocking(const uint8_t *data, size_t len, uint32_t timeout_ms = 100)
     {
         return cdc_acm_host_data_tx_blocking(this->cdc_hdl, data, len, timeout_ms);
     }
@@ -313,7 +316,7 @@ public:
         return cdc_acm_host_line_coding_get(this->cdc_hdl, line_coding);
     }
 
-    inline esp_err_t line_coding_set(cdc_acm_line_coding_t *line_coding)
+    inline virtual esp_err_t line_coding_set(cdc_acm_line_coding_t *line_coding)
     {
         return cdc_acm_host_line_coding_set(this->cdc_hdl, line_coding);
     }

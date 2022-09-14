@@ -9,6 +9,7 @@
 
 #include "usb/cdc_acm_host.h"
 
+#define FTDI_VID       (0x0403)
 #define FTDI_FT232_PID       (0x6001)
 #define FTDI_FT231_PID       (0x6015)
 
